@@ -1,0 +1,34 @@
+[project]
+name = "industry_analysis"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "aiofiles>=25.1.0",
+    "duckdb>=1.5.2",
+    "fastapi>=0.136.1",
+    "httpx>=0.28.1",
+    "pydantic-settings>=2.12.0",
+    "mypy>=1.20.2",
+    "orjson>=3.11.8",
+    "ruff>=0.15.12",
+    "uvicorn>=0.46.0",
+]
+
+[project.scripts]
+api = "industry_analysis.presentation.app:run"
+job-intel = "industry_analysis.company_analysis.presentation.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+exclude = [
+    '^tests/',
+    '.venv/',
+]
+
+[build-system]
+requires = ["uv_build>=0.9.8,<0.10.0"]
+build-backend = "uv_build"
