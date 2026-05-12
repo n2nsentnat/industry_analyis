@@ -7,10 +7,12 @@ from collections.abc import Awaitable, Callable
 import httpx
 
 
-async def sleep_for_retry_after(response: httpx.Response) -> None:
+async def sleep_for_retry_after(response: httpx.Response, *, attempt: int = 0) -> None:
     header = response.headers.get("Retry-After")
     if header is None:
-        await asyncio.sleep(1.0 + random.random())
+        # Exponential backoff when API omits Retry-After (common for Gemini quota bursts)
+        base = min(2.0 * (2 ** min(attempt, 4)), 60.0)
+        await asyncio.sleep(base + random.random() * 0.5)
         return
     try:
         seconds = float(header)
@@ -31,7 +33,7 @@ async def request_with_retries(
         if response.status_code == 429:
             if attempt >= max_retries:
                 return response
-            await sleep_for_retry_after(response)
+            await sleep_for_retry_after(response, attempt=attempt)
             continue
         if 500 <= response.status_code < 600:
             if attempt >= max_retries:

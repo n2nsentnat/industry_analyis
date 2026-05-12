@@ -7,10 +7,14 @@ import orjson
 
 from industry_analysis.company_analysis.infrastructure.config.settings import Settings
 from industry_analysis.company_analysis.infrastructure.http.retry import request_with_retries
+from industry_analysis.company_analysis.infrastructure.llm.company_enrichment_llm_schema import (
+    OPENAI_COMPANY_ENRICHMENT_JSON_SCHEMA,
+)
+from industry_analysis.company_analysis.infrastructure.llm.llm_json_parse import parse_llm_json_object
 
 
 class OpenAiJsonObjectLlm:
-    """OpenAI Chat Completions with `response_format: json_object` (implements application port)."""
+    """OpenAI Chat Completions with strict ``json_schema`` structured output (application port)."""
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
@@ -43,12 +47,22 @@ class OpenAiJsonObjectLlm:
         }
         payload = {
             "model": self._settings.OPENAI_MODEL,
-            "temperature": 0.2,
-            "response_format": {"type": "json_object"},
+            "temperature": 0,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "company_enrichment",
+                    "strict": True,
+                    "schema": OPENAI_COMPANY_ENRICHMENT_JSON_SCHEMA,
+                },
+            },
             "messages": [
                 {
                     "role": "system",
-                    "content": "You output compact JSON only. Follow the user's key names exactly.",
+                    "content": (
+                        "Return exactly one JSON object matching the json_schema. "
+                        "No markdown, no commentary."
+                    ),
                 },
                 {"role": "user", "content": user_prompt},
             ],
@@ -63,8 +77,8 @@ class OpenAiJsonObjectLlm:
         if not isinstance(content, str):
             msg = "Unexpected OpenAI response shape"
             raise RuntimeError(msg)
-        parsed = orjson.loads(content)
-        if not isinstance(parsed, dict):
-            msg = "Model JSON was not an object"
-            raise RuntimeError(msg)
-        return parsed
+        try:
+            return parse_llm_json_object(content)
+        except (orjson.JSONDecodeError, ValueError) as e:
+            msg = f"OpenAI JSON parse failed: {e}"
+            raise RuntimeError(msg) from e

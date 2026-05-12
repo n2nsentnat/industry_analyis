@@ -3,33 +3,11 @@ from __future__ import annotations
 import asyncio
 from datetime import UTC, datetime
 
+from industry_analysis.company_analysis.application.company_prompt import build_company_enrichment_prompt
 from industry_analysis.company_analysis.application.dto import EnrichRunConfig
 from industry_analysis.company_analysis.application.paths import enriched_relpath
 from industry_analysis.company_analysis.application.ports import BlobStore, JsonObjectLlmPort
 from industry_analysis.company_analysis.domain.models import CompanyAggregate, CompanyEnrichment, CompanyEnrichmentRecord
-
-
-def _build_user_prompt(aggregate: CompanyAggregate) -> str:
-    titles = "\n".join(f"- {t}" for t in aggregate.sample_titles[:20])
-    cats = ", ".join(dict.fromkeys(aggregate.category_labels))
-    desc = (aggregate.sample_description or "").strip()
-    desc = desc[:6000]
-    return (
-        "You are analyzing hiring demand to infer what a company likely does, where it probably uses UI, "
-        "where AI could help (automation, core business improvement, net-new AI products), and where AI "
-        "should be avoided.\n\n"
-        "Return ONLY valid JSON with EXACTLY these keys:\n"
-        '- "Name" (string)\n'
-        '- "Industry" (array of strings)\n'
-        '- "current_use_of_AI" (string)\n'
-        '- "possible_use_of_AI" (string)\n'
-        '- "avoid_AI_use" (string)\n\n'
-        "Be concrete and conservative where evidence is weak.\n\n"
-        f"Company display name: {aggregate.display_name}\n"
-        f"Job categories seen in ads: {cats}\n"
-        f"Sample job titles:\n{titles}\n\n"
-        f"Sample job description snippet:\n{desc}\n"
-    )
 
 
 class EnrichOrchestrator:
@@ -66,7 +44,7 @@ class EnrichOrchestrator:
             if not force and await self._store.exists(rel):
                 return
             async with sem:
-                user_prompt = _build_user_prompt(aggregate)
+                user_prompt = build_company_enrichment_prompt(aggregate)
                 obj = await self._llm.generate_company_profile_json(user_prompt)
                 enrichment = CompanyEnrichment.model_validate(obj)
                 record = CompanyEnrichmentRecord(

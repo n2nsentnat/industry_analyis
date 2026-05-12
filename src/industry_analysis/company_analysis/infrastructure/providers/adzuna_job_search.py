@@ -9,6 +9,15 @@ from industry_analysis.company_analysis.domain.models import Category
 from industry_analysis.company_analysis.infrastructure.http.retry import request_with_retries
 
 
+def _normalize_adzuna_base_url(base_url: str) -> str:
+    """Strip a trailing ``/v1/api`` so we never double-prefix paths (…/v1/api/v1/api/…)."""
+    base = base_url.strip().rstrip("/")
+    suffix = "/v1/api"
+    if base.lower().endswith(suffix):
+        return base[: -len(suffix)].rstrip("/")
+    return base
+
+
 class AdzunaJobSearchProvider:
     """Adzuna public Jobs API (categories + /search/{page})."""
 
@@ -27,7 +36,7 @@ class AdzunaJobSearchProvider:
         self._app_id = app_id
         self._app_key = app_key
         self.country = country.lower()
-        self._base = base_url.rstrip("/")
+        self._base = _normalize_adzuna_base_url(base_url)
         self._http_gate = http_gate
         self._max_retries = max_retries
 
