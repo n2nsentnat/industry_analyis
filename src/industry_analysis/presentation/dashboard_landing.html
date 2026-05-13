@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Industry analysis — dashboard</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; line-height: 1.5; color: #1a202c; }
+    body { max-width: 44rem; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.35rem; }
+    .card { background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1rem 1.25rem; margin: 1rem 0; }
+    a.button { display: inline-block; margin: 0.35rem 0.5rem 0.35rem 0; padding: 0.5rem 1rem; background: #2b6cb0; color: #fff !important; text-decoration: none; border-radius: 8px; font-weight: 600; }
+    a.secondary { background: #2f855a; }
+    code { background: #edf2f7; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.9rem; }
+    .warn { color: #c05621; }
+    body.nobuild .only-built { display: none; }
+    body.built .only-nobuild { display: none; }
+    ul { padding-left: 1.2rem; }
+  </style>
+</head>
+<body class="__BODY_CLASS__">
+  <h1>Industry analysis — open the UI</h1>
+  <p><strong>Port 8000</strong> is this API. The React charts app runs on <strong>port 5173</strong> while you develop (unless you build static files into <code>web/dist/</code>).</p>
+
+  <div class="card">
+    <h2 style="margin-top:0;font-size:1.1rem;">Step 1 — Keep this API running</h2>
+    <p style="margin-bottom:0;"><code>uv run api</code> (already running if you see this page).</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;font-size:1.1rem;">Step 2 — Start the dashboard (dev)</h2>
+    <p>In another terminal, from the <strong>repository root</strong>:</p>
+    <pre style="background:#1a202c;color:#e2e8f0;padding:0.75rem;border-radius:8px;overflow:auto;"><code>cd web
+npm install
+npm run dev</code></pre>
+    <p>Then open:</p>
+    <a class="button" href="http://127.0.0.1:5173/">Open charts UI (Vite — 127.0.0.1:5173)</a>
+    <p class="warn" style="margin-bottom:0;">If the page is blank, check the terminal: Vite may print a slightly different URL (e.g. <code>localhost:5173</code>).</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;font-size:1.1rem;">Alternative — same server (after build)</h2>
+    <div class="only-nobuild">
+      <p class="warn">No <code>web/dist/</code> detected. Build once, then restart the API:</p>
+      <pre style="background:#1a202c;color:#e2e8f0;padding:0.75rem;border-radius:8px;"><code>cd web
+npm install
+npm run build</code></pre>
+    </div>
+    <div class="only-built">
+      <p>Static UI is available on this server:</p>
+      <a class="button secondary" href="/ui/">Open charts UI (/ui/)</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;font-size:1.1rem;">API</h2>
+    <ul>
+      <li><a href="/docs">Swagger UI (/docs)</a></li>
+      <li><a href="/api/job-intel/categories">GET /api/job-intel/categories</a></li>
+      <li><a href="/health">GET /health</a></li>
+      <li><a href="/api/info">GET /api/info</a> (JSON)</li>
+    </ul>
+  </div>
+</body>
+</html>
