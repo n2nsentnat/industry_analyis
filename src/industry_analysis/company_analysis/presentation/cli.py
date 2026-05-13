@@ -36,7 +36,7 @@ from industry_analysis.company_analysis.infrastructure.providers.adzuna_job_sear
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="job-intel",
-        description="Fetch job ads (Adzuna) by category to disk JSON, then LLM insights per company.",
+        description="Fetch job ads (Adzuna) by category to disk JSON, LLM insights per company, and pandas industry charts.",
     )
     parser.add_argument(
         "--data-dir",
@@ -102,6 +102,29 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=("ollama", "gemini", "openai"),
         default=None,
         help="Override LLM_PROVIDER: ollama (local), gemini (GEMINI_API_KEY), openai (OPENAI_API_KEY)",
+    )
+
+    p_analyze = sub.add_parser(
+        "analyze",
+        help="Pandas + charts: industry-wise AI usage / upgrade signals from insight JSON files",
+    )
+    p_analyze.add_argument(
+        "--category",
+        default=None,
+        help="Only <category_tag>/insights/*.json; default scans every */insights/ under DATA_DIR",
+    )
+    p_analyze.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="PNG and CSV output directory (default: <DATA_DIR>/analysis_reports)",
+    )
+    p_analyze.add_argument(
+        "--top-n",
+        type=int,
+        default=15,
+        metavar="N",
+        help="How many industries to show per chart (default 15)",
     )
 
     return parser.parse_args(argv)
@@ -304,8 +327,44 @@ async def _cmd_enrich(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_analyze(args: argparse.Namespace) -> int:
+    from industry_analysis.company_analysis.application.insights_analytics import (
+        aggregate_by_industry,
+        collect_insight_paths,
+        load_insights_dataframe,
+    )
+    from industry_analysis.company_analysis.presentation.insight_charts import write_industry_report_charts
+
+    settings = _settings_with_overrides(data_dir=args.data_dir, country=None)
+    data_dir = settings.DATA_DIR
+    if not data_dir.is_dir():
+        print(f"DATA_DIR is not a directory: {data_dir.resolve()}", file=sys.stderr)
+        return 2
+    paths = collect_insight_paths(data_dir, category_tag=args.category)
+    if not paths:
+        print(f"No insight JSON files under {data_dir.resolve()}", file=sys.stderr)
+        return 2
+    df = load_insights_dataframe(paths)
+    if df.empty:
+        print("No valid company insight records (expected CompanyEnrichment shape).", file=sys.stderr)
+        return 2
+    top_n = max(5, min(args.top_n, 50))
+    out_dir = args.output_dir if args.output_dir is not None else (data_dir / "analysis_reports")
+    agg = aggregate_by_industry(df)
+    written = write_industry_report_charts(agg, out_dir, top_n=top_n)
+    print(f"Wrote {len(written)} files under {out_dir.resolve()}")
+    for w in written:
+        print(f"  {w}")
+    print("\nTop industries by inferred current-AI language (heuristic, not ground truth):")
+    preview = agg.head(5)[["industry", "companies", "mean_current_ai", "mean_ai_upgrade"]]
+    print(preview.to_string(index=False))
+    return 0
+
+
 async def _async_main(argv: list[str] | None) -> int:
     args = _parse_args(argv)
+    if args.command == "analyze":
+        return _cmd_analyze(args)
     if args.command == "fetch":
         return await _cmd_fetch(args)
     if args.command == "status":

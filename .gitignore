@@ -33,5 +33,9 @@ htmlcov/
 *.swo
 .DS_Store
 
+# Web UI (Vite)
+web/node_modules/
+web/dist/
+
 # Generated job-intel data (see README DATA_DIR)
 data/job_intel/
