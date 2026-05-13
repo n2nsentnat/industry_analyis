@@ -1,6 +1,12 @@
 # Industry analysis
 
-Fetch job listings from the [Adzuna](https://developer.adzuna.com/) Jobs API **for one job category** using the **category tag** you pass on the CLI (`--category`). Optionally place **`categories.json`** under `DATA_DIR` if you want to pass a **human-readable label** instead of the tag. Output lives under **`DATA_DIR/<category_tag>/`** (raw pages, checkpoint, company index, then flat LLM JSON per company: `Name`, `Industry`, `current_use_of_AI`, `possible_use_of_AI`, `avoid_AI_use`).
+## Objective
+
+The goal is to **scan job postings across industries** (by aggregating listings—typically one job category at a time) and infer, for each hiring organization, **where their work could be improved using AI**, **where they are likely already using AI**, and **where AI should be avoided**. Those angles are captured in structured outputs: `current_use_of_AI`, `possible_use_of_AI`, and `avoid_AI_use`, together with `Name` and `Industry`.
+
+## Overview
+
+This tool fetches listings from the [Adzuna](https://developer.adzuna.com/) Jobs API **for one job category** using the **category tag** you pass on the CLI (`--category`). Optionally place **`categories.json`** under `DATA_DIR` if you want to pass a **human-readable label** instead of the tag. Output lives under **`DATA_DIR/<category_tag>/`** (raw pages, checkpoint, company index, then flat LLM JSON per company: `Name`, `Industry`, `current_use_of_AI`, `possible_use_of_AI`, `avoid_AI_use`).
 
 ## Repository layout
 
